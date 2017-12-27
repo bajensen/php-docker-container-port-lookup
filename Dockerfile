@@ -9,7 +9,7 @@ RUN composer install
 COPY conf/docker-lookup.conf /etc/httpd/conf.d/
 
 RUN rm /etc/httpd/conf.d/welcome.conf && \
-    /opt/docker-lookup/docker-entrypoint.sh
+    chmod +x /opt/docker-lookup/docker-entrypoint.sh
 
 WORKDIR /opt/docker-lookup/public
 
