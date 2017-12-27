@@ -1,6 +1,12 @@
 FROM bjensena/pag2471sc
 
-COPY . /opt/docker-lookup/
+COPY logs /opt/docker-lookup/
+COPY public /opt/docker-lookup/
+COPY src /opt/docker-lookup/
+COPY view /opt/docker-lookup/
+COPY composer.json /opt/docker-lookup/
+COPY composer.lock /opt/docker-lookup/
+COPY docker-entrypoint.sh /opt/docker-lookup/
 
 WORKDIR /opt/docker-lookup/
 
