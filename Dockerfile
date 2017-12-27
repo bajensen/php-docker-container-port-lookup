@@ -15,7 +15,7 @@ WORKDIR /opt/docker-lookup/public
 
 EXPOSE 80
 
-ENTRYPOINT /opt/docker-lookup/docker-entrypoint.sh
+ENTRYPOINT ["/opt/docker-lookup/docker-entrypoint.sh"]
 
 #CMD ["php", "-S", "0.0.0.0:80"]
 CMD ["httpd-foreground"]
