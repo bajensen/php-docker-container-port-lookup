@@ -53,10 +53,9 @@ $app->get('/{proto}/{name}', function (Request $request, Response $response) {
 
         if ($hostPort) {
             if (in_array($proto, ['http', 'https'])) {
-                $redirectUrl = 'http://' . $host . ':' . $hostPort . '/';
-                $response->withStatus(302);
-                $response->withHeader('Location', $redirectUrl);
+                $redirectUrl = $proto . '://' . $host . ':' . $hostPort . '/';
                 $response->getBody()->write('Redirecting to: <a href="' . $redirectUrl . '">' . $redirectUrl . '</a>');
+                $response->withRedirect($redirectUrl, 301);
             }
             else {
                 $response->withStatus(200);
