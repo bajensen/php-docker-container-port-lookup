@@ -34,7 +34,9 @@ $app->get('/', function (Request $request, Response $response) {
 });
 
 $app->get('/{proto}/{name}', function (Request $request, Response $response) {
-    $host = array_shift($request->getHeader('Host'));
+    $hostHeader = $request->getHeader('Host');
+    $host = array_shift($hostHeader);
+
     $name = $request->getAttribute('name');
     $proto = $request->getAttribute('proto');
 
