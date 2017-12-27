@@ -27,26 +27,61 @@ $container['view'] = new \Slim\Views\PhpRenderer(__DIR__. '/../view/');
 
 // Routes
 $app->get('/', function (Request $request, Response $response) {
-    $response = $this->view->render($response, "index.phtml", []);
+    $response->withStatus(200);
+    $response->getBody()->write('Hi');
 
     return $response;
 });
 
-$app->post('/set_position', function (Request $request, Response $response) {
-    $data = $request->getParsedBody();
-    $panPos = $data['pan'];
-    $tiltPos = $data['tilt'];
-    $transitionTime = $data['speed'] * 500;
+$app->get('/ssh/{name}', function (Request $request, Response $response) {
+    $name = $request->getAttribute('name');
 
     try {
-        $msg = sendMessage(sprintf('X%03d Y%03d T%04d C', $panPos, $tiltPos, $transitionTime));
-        $response->withStatus(200);
-        $response->getBody()->write(json_encode(['msg' => $msg], JSON_NUMERIC_CHECK));
+        $port = findPort($name, 22, 'tcp');
+
+        if ($port) {
+            $response->withStatus(200);
+            $response->getBody()->write($port);
+        }
+        else {
+            $response->withStatus(404);
+            $response->getBody()->write('Failed to find port binding.');
+        }
     }
-    catch (\Zyn\Exception\MessageException $e) {
-        $response->withStatus(500);
-        $response->getBody()->write("{$e->getMessage()} ({$e->getCode()})");
+    catch (\Http\Client\Exception $e) {
+        $response->withStatus(404);
+        $response->getBody()->write('Container not found: ' . $e->getMessage());
     }
 
     return $response;
 });
+
+try {
+    $app->run();
+}
+catch (\Exception $e) {
+    die('Something went terribly wrong.');
+}
+
+/**
+ * @param string $containerName
+ * @param string $number
+ * @param string $protocol
+ * @return int|null the port number or null if one was not found
+ * @throws \Http\Client\Exception
+ */
+function findPort ($containerName, $number, $protocol = 'tcp') {
+    $url = '/containers/' . $containerName . '/json';
+
+    $docker = new \Zyn\DockerClient\Client();
+    $dockerRes = $docker->get($url);
+    $bindings = $dockerRes->getPathValue('NetworkSettings.Ports.' . $number . '/' . $protocol);
+
+    $port = null;
+
+    foreach ($bindings as $binding) {
+        $port = $binding['HostPort'];
+    }
+
+    return $port;
+}

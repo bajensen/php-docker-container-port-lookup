@@ -32,13 +32,13 @@ class Client {
 
     /**
      * @param $url
-     * @return mixed
+     * @return Response
      * @throws \Http\Client\Exception
      */
     public function get ($url) {
         $response = $this->methodClient->get($url, ['Host' => 'localhost']);
         $body = $response->getBody();
         $contents = $body->getContents();
-        return json_decode($contents, true);
+        return new Response(json_decode($contents, true));
     }
 }
