@@ -33,15 +33,33 @@ $app->get('/', function (Request $request, Response $response) {
     return $response;
 });
 
-$app->get('/ssh/{name}', function (Request $request, Response $response) {
+$app->get('/{proto}/{name}', function (Request $request, Response $response) {
+    $host = array_shift($request->getHeader('Host'));
     $name = $request->getAttribute('name');
+    $proto = $request->getAttribute('proto');
+
+    $portMap = [
+        'http' => 80,
+        'https' => 443,
+        'ssh' => 22
+    ];
+
+    $containerPort = array_key_exists($proto, $portMap) ? $portMap[$proto] : $proto;
 
     try {
-        $port = findPort($name, 22, 'tcp');
+        $hostPort = findPort($name, $containerPort, 'tcp');
 
-        if ($port) {
-            $response->withStatus(200);
-            $response->getBody()->write($port);
+        if ($hostPort) {
+            if (in_array($proto, ['http', 'https'])) {
+                $redirectUrl = 'http://' . $host . ':' . $hostPort . '/';
+                $response->withStatus(302);
+                $response->withHeader('Location', $redirectUrl);
+                $response->getBody()->write('Redirecting to: <a href="' . $redirectUrl . '">' . $redirectUrl . '</a>');
+            }
+            else {
+                $response->withStatus(200);
+                $response->getBody()->write($hostPort);
+            }
         }
         else {
             $response->withStatus(404);
