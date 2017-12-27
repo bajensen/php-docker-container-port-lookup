@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+SSH_PORT=$(curl --fail http://elephant.a.zyn.us:88/ssh/$1 2> /dev/null)
+
+RET_VAL=$?
+
+printf "Result: %s\nCode: %s\n" "${SSH_PORT}" "${RET_VAL}"
+
+#if [ ${RET_VAL} -eq 0 ]; then
+#    ssh root@elephant.a.zyn.us -p ${SSH_PORT}
+#else
+#    echo "Could not find port number!"
+#fi;
+
+exit ${RET_VAL}
