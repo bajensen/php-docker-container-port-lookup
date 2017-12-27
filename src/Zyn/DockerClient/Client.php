@@ -41,4 +41,26 @@ class Client {
         $contents = $body->getContents();
         return new Response(json_decode($contents, true));
     }
+
+    /**
+     * @param string $containerName
+     * @param string $number
+     * @param string $protocol
+     * @return int|null the port number or null if one was not found
+     * @throws \Http\Client\Exception
+     */
+    public function findPort ($containerName, $number, $protocol = 'tcp') {
+        $url = '/containers/' . $containerName . '/json';
+
+        $dockerRes = $this->get($url);
+        $bindings = $dockerRes->getPathValue('NetworkSettings.Ports.' . $number . '/' . $protocol);
+
+        $port = null;
+
+        foreach ($bindings as $binding) {
+            $port = $binding['HostPort'];
+        }
+
+        return $port;
+    }
 }

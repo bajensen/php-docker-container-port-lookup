@@ -27,10 +27,9 @@ $container['view'] = new \Slim\Views\PhpRenderer(__DIR__. '/../view/');
 
 // Routes
 $app->get('/', function (Request $request, Response $response) {
-    $response->withStatus(200);
     $response->getBody()->write('Hi');
 
-    return $response;
+    return $response->withStatus(200);;
 });
 
 $app->get('/{proto}/{name}', function (Request $request, Response $response) {
@@ -49,58 +48,29 @@ $app->get('/{proto}/{name}', function (Request $request, Response $response) {
     $containerPort = array_key_exists($proto, $portMap) ? $portMap[$proto] : $proto;
 
     try {
-        $hostPort = findPort($name, $containerPort, 'tcp');
+        $docker = new \Zyn\DockerClient\Client();
+        $hostPort = $docker->findPort($name, $containerPort, 'tcp');
 
         if ($hostPort) {
             if (in_array($proto, ['http', 'https'])) {
                 $redirectUrl = $proto . '://' . $host . ':' . $hostPort . '/';
                 $response->getBody()->write('Redirecting to: <a href="' . $redirectUrl . '">' . $redirectUrl . '</a>');
-                $response->withRedirect($redirectUrl, 301);
+                return $response->withRedirect($redirectUrl, 301);
             }
             else {
-                $response->withStatus(200);
                 $response->getBody()->write($hostPort);
+                return $response->withStatus(200);
             }
         }
         else {
-            $response->withStatus(404);
             $response->getBody()->write('Failed to find port binding.');
+            return $response->withStatus(404);
         }
     }
     catch (\Http\Client\Exception $e) {
-        $response->withStatus(404);
-        $response->getBody()->write('Container not found: ' . $e->getMessage());
+        $response->getBody()->write('Exception Occurred: ' . $e->getMessage());
+        return $response->withStatus(500);
     }
-
-    return $response;
 });
 
-try {
-    $app->run();
-}
-catch (\Exception $e) {
-    die('Something went terribly wrong.');
-}
-
-/**
- * @param string $containerName
- * @param string $number
- * @param string $protocol
- * @return int|null the port number or null if one was not found
- * @throws \Http\Client\Exception
- */
-function findPort ($containerName, $number, $protocol = 'tcp') {
-    $url = '/containers/' . $containerName . '/json';
-
-    $docker = new \Zyn\DockerClient\Client();
-    $dockerRes = $docker->get($url);
-    $bindings = $dockerRes->getPathValue('NetworkSettings.Ports.' . $number . '/' . $protocol);
-
-    $port = null;
-
-    foreach ($bindings as $binding) {
-        $port = $binding['HostPort'];
-    }
-
-    return $port;
-}
+$app->run();
